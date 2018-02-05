@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="header">
+	<span id="countdown"></span>
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<span id="mynickname"></span>
+</div>
+<br />
+<div class="container" id="nicknameinput">
+	<input type="text" id="nick" placeholder="Nickname" /><br />
+	<input type="button" id="submitnick" value="Join!" />
+</div>
+<div class="container" id="startwait">
+	<p>
+		Other players are joining...
+	</p>
+	<p id="playerlist">
+		loading...
+	</p>
+	<p id="startgame">
+		<input type="button" id="startgame" value="Start the game!" /><br />
+		(press this once everyone has joined)
+	</p>
+</div>
+<div class="container" id="loading">
+	<p>
+		Questions are being generated... This shouldn't take more than a second.
+	</p>
+</div>
+<div class="container" id="questioninput">
+	<p id="question">
+		???
+	</p>
+	<input type="text" id="answer" placeholder="Answer here..." />
+	<input type="button" id="submitanswer" value="Answer!" />
+</div>
+<div class="container" id="waiting">
+	<p>
+		Please wait for other players to answer...
+	</p>
+</div>
+<div class="container" id="voteinput">
+	<p id="question">
+		???
+	</p>
+</div>
+<div class="container" id="voteresult">
+
+</div>
+{% endblock %}
