@@ -1,0 +1,1 @@
+Yeah, its not finished yet. But there is not a good way to have a background thread in flask that can send data through the socketio channels so i'm stuck.
