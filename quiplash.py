@@ -1,8 +1,10 @@
-
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, redirect, request, make_response, render_template
 import sqlite3, os, time, urllib, hashlib, random, threading
 from flask_socketio import SocketIO, emit
 from flask_qrcode import QRcode
+from peewee import *
 from config import *
 
 current_id = 0
@@ -12,20 +14,45 @@ def newid(): # make it easy to get a new unique numeric id for stuff in the data
 	current_id += 1
 	return current_id
 
-db = sqlite3.connect(":memory:")
-c = db.cursor()
-c.execute("CREATE TABLE users (uid int, cookie text, nickname text, score int)")
-c.execute("CREATE TABLE questions (qid int, question text)")
-c.execute("CREATE TABLE assignedq (uid int, qid int)")
-c.execute("CREATE TABLE answers (aid int, uid int, qid int, answer text)")
-c.execute("CREATE TABLE votes (vid int, uid int, qid int, aid int)")
+temp_database = SqliteDatabase(':memory:')
+
+class BaseModel(Model):
+	class Meta:
+		database = temp_database
+
+class User(BaseModel):
+	cookie = TextField()
+	nickname = TextField()
+	score = IntegerField()
+
+class Question(BaseModel):
+	text = TextField()
+
+class AssignedQuestion(BaseModel):
+	user = ForeignKeyField(User,backref='questions')
+	question = ForeignKeyField(Question,backref='assignedto')
+
+class Answer(BaseModel):
+	user = ForeignKeyField(User,backref='answers')
+	question = ForeignKeyField(Question,backref='answers')
+	answer = TextField()
+
+class Vote(BaseModel):
+	user = ForeignKeyField(User,backref='votes')
+	question = ForeignKeyField(Question,backref='votes')
+	answer = ForeignKeyField(Answer,backref='votes')
+
+db.connect()
+db.create_tables([User,Question,AssignedQuestion,Answer,Vote])
+
+
 
 questions = open("questions.txt",'r').readlines()
 for q in questions:
-	c.execute("INSERT INTO questions VALUES (?,?)",(newid(),q))
+	Question.create(text=q)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sfsfkljtrsbltbrtyugfcv8898w7672482478472847092834750923k74059823470928734098273045702dfjefgjdfgjdfgyfgjdfsgheryju rty hj cvj ertyhesrthg asdf93847509274509230495029347584567456767456981092810293801978278'
+app.config['SECRET_KEY'] = SECRET_KEY
 socketio = SocketIO(app, async_mode=None)
 qrcode = QRcode(app)
 
@@ -36,7 +63,7 @@ gamedatalock = threading.Lock()
 
 def timerjob():
 	while 1:
-		time.sleep(1)
+		eventlet.sleep(1)
 		global gamemode,gametimer
 		print gamemode,gametimer
 		with gamedatalock:
@@ -49,8 +76,7 @@ def timerjob():
 				gametimer -= 1
 				socketio.emit("timerupdate",{"time":gametimer},namespace='/')
 
-bgthread = threading.Thread(target=timerjob)
-bgthread.start()
+eventlet.spawn(timerjob) # i think this would work
 
 @app.route('/')
 def homepage():
